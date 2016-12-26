@@ -8,7 +8,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Properties;
@@ -21,26 +20,20 @@ import java.util.Random;
  * Whenever a message is received on "slow-messages", the stats are dumped.
  */
 public class Consumer {
-    public static void main(String[] args) throws IOException {
+
+    public static void consume(KafkaConsumer<String, String> consumer, long maxTime) throws Exception {
+
         // set up house-keeping
         ObjectMapper mapper = new ObjectMapper();
         Histogram stats = new Histogram(1, 10000000, 2);
         Histogram global = new Histogram(1, 10000000, 2);
 
-        // and the consumer
-        KafkaConsumer<String, String> consumer;
-        try (InputStream props = Resources.getResource("consumer.props").openStream()) {
-            Properties properties = new Properties();
-            properties.load(props);
-            if (properties.getProperty("group.id") == null) {
-                properties.setProperty("group.id", "group-" + new Random().nextInt(100000));
-            }
-            consumer = new KafkaConsumer<>(properties);
-        }
-        consumer.subscribe(Arrays.asList("fast-messages", "summary-markers"));
+        long start = System.currentTimeMillis();
+
+        consumer.subscribe(Arrays.asList(Producer.TOPIC1, Producer.TOPIC2));
         int timeouts = 0;
         //noinspection InfiniteLoopStatement
-        while (true) {
+        while (System.currentTimeMillis() - start < maxTime) {
             // read records with a short timeout. If we time out, we don't really care.
             ConsumerRecords<String, String> records = consumer.poll(200);
             if (records.count() == 0) {
@@ -51,7 +44,7 @@ public class Consumer {
             }
             for (ConsumerRecord<String, String> record : records) {
                 switch (record.topic()) {
-                    case "fast-messages":
+                    case Producer.TOPIC1:
                         // the send time is encoded inside the message
                         JsonNode msg = mapper.readTree(record.value());
                         switch (msg.get("type").asText()) {
@@ -78,12 +71,27 @@ public class Consumer {
                                 throw new IllegalArgumentException("Illegal message type: " + msg.get("type"));
                         }
                         break;
-                    case "summary-markers":
+                    case Producer.TOPIC2:
                         break;
                     default:
                         throw new IllegalStateException("Shouldn't be possible to get message on topic " + record.topic());
                 }
             }
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        // and the consumer
+        KafkaConsumer<String, String> consumer;
+        try (InputStream props = Resources.getResource("consumer.props").openStream()) {
+            Properties properties = new Properties();
+            properties.load(props);
+            if (properties.getProperty("group.id") == null) {
+                properties.setProperty("group.id", "group-" + new Random().nextInt(100000));
+            }
+            consumer = new KafkaConsumer<>(properties);
+        }
+        consume(consumer, Long.MAX_VALUE);
     }
 }

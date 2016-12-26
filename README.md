@@ -1,16 +1,28 @@
-# Sample Programs for Kafka 0.9 API
+# Sample Programs for Kafka 0.10 API
 
 This project provides a simple but realistic example of a Kafka
 producer and consumer. These programs are written in a style and a
 scale that will allow you to adapt them to get something close to a
 production style. There is a surprising dearth of examples for the new
-Kafka API that arrived with 0.9.0, which is a pity since the new API
+Kafka API that arrived with 0.10.1, which is a pity since the new API
 is so much better than the previous API.
 
 This README takes you through the steps for downloading and installing
 a single node version of Kafka. We don't focus on the requirements for
 a production Kafka cluster because we want to focus on the code itself
 and various aspects of starting and restarting.
+
+## Tests
+
+The idea is how one can mock the actual kafka with
+kafka-unit apis, to have a locally hosted kafka instance,
+and thus - whole of the functionality can be actually tested.
+
+If you run the test - and see code, you are good to have an
+idea how new kafka-api works.
+It requires https://github.com/nmondal/kafka-unit
+which needs to have its unique identifier changed
+
 
 ## Pre-requisites
 To start, you need to get Kafka up and running and create some topics.

@@ -15,29 +15,28 @@ import java.util.Properties;
  * also see how the two topics aren't really synchronized.
  */
 public class Producer {
-    public static void main(String[] args) throws IOException {
-        // set up the producer
-        KafkaProducer<String, String> producer;
-        try (InputStream props = Resources.getResource("producer.props").openStream()) {
-            Properties properties = new Properties();
-            properties.load(props);
-            producer = new KafkaProducer<>(properties);
-        }
 
+
+    public static final String TOPIC1 = "fast-messages";
+
+    public static final String TOPIC2 = "summary-markers";
+
+
+    public static void produce(KafkaProducer<String, String> producer) {
         try {
-            for (int i = 0; i < 1000000; i++) {
+            for (int i = 0; i < 100; i++) {
                 // send lots of messages
                 producer.send(new ProducerRecord<String, String>(
-                        "fast-messages",
+                        TOPIC1,
                         String.format("{\"type\":\"test\", \"t\":%.3f, \"k\":%d}", System.nanoTime() * 1e-9, i)));
 
                 // every so often send to a different topic
-                if (i % 1000 == 0) {
+                if (i % 10 == 0) {
                     producer.send(new ProducerRecord<String, String>(
-                            "fast-messages",
+                            TOPIC1,
                             String.format("{\"type\":\"marker\", \"t\":%.3f, \"k\":%d}", System.nanoTime() * 1e-9, i)));
                     producer.send(new ProducerRecord<String, String>(
-                            "summary-markers",
+                            TOPIC2,
                             String.format("{\"type\":\"other\", \"t\":%.3f, \"k\":%d}", System.nanoTime() * 1e-9, i)));
                     producer.flush();
                     System.out.println("Sent msg number " + i);
@@ -48,6 +47,16 @@ public class Producer {
         } finally {
             producer.close();
         }
+    }
 
+    public static void main(String[] args) throws IOException {
+        // set up the producer
+        KafkaProducer<String, String> producer;
+        try (InputStream props = Resources.getResource("producer.props").openStream()) {
+            Properties properties = new Properties();
+            properties.load(props);
+            producer = new KafkaProducer<>(properties);
+        }
+        produce(producer);
     }
 }
